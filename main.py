@@ -55,7 +55,6 @@ while True:
         break
 
 offset = 0
-limit = 50
 while True:
     resources = oauth.get(
         api_uri + "resources/archived", params={"limit": limit, "offset": offset}
@@ -87,11 +86,42 @@ while True:
     if not bookings:
         break
 
+all_projects = []
+
+offset = 0
+while True:
+    projects = oauth.get(
+        api_uri + "projects", params={"limit": limit, "offset": offset}
+    ).json()
+    offset = offset + limit
+    all_projects = all_projects + projects
+    bar.update(i)
+    i += 1
+    if not projects:
+        break
+
+offset = 0
+while True:
+    projects = oauth.get(
+        api_uri + "projects/archived", params={"limit": limit, "offset": offset}
+    ).json()
+    offset = offset + limit
+    all_projects = all_projects + projects
+    bar.update(i)
+    i += 1
+    if not projects:
+        break
+
 bar.finish()
 
 resources_by_id = {r["id"]: r for r in all_resources}
+projects_by_id = {p["id"]: p for p in all_projects}
 rich_bookings = [
-    {"resource": resources_by_id[b["resource_id"]], **b}
+    {
+        "resource": resources_by_id[b["resource_id"]],
+        "project": projects_by_id.get(b["project_id"]),
+        **b,
+    }
     for b in all_bookings
     if b["resource_id"] in resources_by_id
 ]
